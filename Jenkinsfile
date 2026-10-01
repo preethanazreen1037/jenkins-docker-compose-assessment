@@ -13,7 +13,29 @@ pipeline {
                 checkout scm
             }
         }
-
+               
+        stage('Environment Setup') {
+            steps {
+                withCredentials([
+                    string(
+                        credentialsId: 'assessment-db-password',
+                        variable: 'DB_PASSWORD'
+                    )
+                ]) {
+                    sh '''
+                        cat > .env <<EOF
+PORT=5000
+DB_HOST=database
+DB_PORT=5432
+DB_NAME=assessmentdb
+DB_USER=assessmentuser
+DB_PASSWORD=${DB_PASSWORD}
+EOF
+                    '''
+                }
+            }
+        }
+        
         stage('Backend Test') {
             steps {
                 dir('backend') {
