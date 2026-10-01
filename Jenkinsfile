@@ -13,7 +13,7 @@ pipeline {
                 checkout scm
             }
         }
-               
+
         stage('Environment Setup') {
             steps {
                 withCredentials([
@@ -35,7 +35,7 @@ EOF
                 }
             }
         }
-        
+
         stage('Backend Test') {
             steps {
                 dir('backend') {
@@ -54,6 +54,16 @@ EOF
             steps {
                 sh '''
                     docker compose build
+
+                    docker tag ${BACKEND_IMAGE}:latest \
+                      ${BACKEND_IMAGE}:${BUILD_NUMBER}
+
+                    docker tag ${FRONTEND_IMAGE}:latest \
+                      ${FRONTEND_IMAGE}:${BUILD_NUMBER}
+
+                    echo "Created versioned images:"
+                    echo "${BACKEND_IMAGE}:${BUILD_NUMBER}"
+                    echo "${FRONTEND_IMAGE}:${BUILD_NUMBER}"
                 '''
             }
         }
@@ -67,13 +77,13 @@ EOF
                       --severity HIGH,CRITICAL \
                       --format table \
                       --output trivy-reports/backend-trivy.txt \
-                      ${BACKEND_IMAGE}
+                      ${BACKEND_IMAGE}:${BUILD_NUMBER}
 
                     trivy image \
                       --severity HIGH,CRITICAL \
                       --format table \
                       --output trivy-reports/frontend-trivy.txt \
-                      ${FRONTEND_IMAGE}
+                      ${FRONTEND_IMAGE}:${BUILD_NUMBER}
                 '''
             }
         }
@@ -90,10 +100,18 @@ EOF
             steps {
                 sh '''
                     sleep 10
-
                     curl --fail http://localhost/api/health
-
                     docker compose ps
+                '''
+            }
+        }
+
+        stage('Rollback Information') {
+            steps {
+                sh '''
+                    echo "Current deployed build: ${BUILD_NUMBER}"
+                    echo "Versioned Docker images are retained for rollback."
+                    echo "Rollback can be performed by redeploying a previous image tag."
                 '''
             }
         }
@@ -118,7 +136,7 @@ EOF
         }
 
         failure {
-            echo 'CI/CD Pipeline failed. Check the stage logs.'
+            echo 'CI/CD Pipeline failed. Previous versioned image can be used for rollback.'
         }
     }
 }
