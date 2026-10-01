@@ -8,9 +8,9 @@ services:
       PORT: 5000
       DB_HOST: database
       DB_PORT: 5432
-      DB_NAME: assessmentdb
-      DB_USER: assessmentuser
-      DB_PASSWORD: assessmentpass
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
     ports:
       - "5000:5000"
     depends_on:
@@ -44,13 +44,13 @@ services:
     image: postgres:16-alpine
     container_name: assessment-database
     environment:
-      POSTGRES_DB: assessmentdb
-      POSTGRES_USER: assessmentuser
-      POSTGRES_PASSWORD: assessmentpass
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U assessmentuser -d assessmentdb"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
       interval: 10s
       timeout: 5s
       retries: 5
